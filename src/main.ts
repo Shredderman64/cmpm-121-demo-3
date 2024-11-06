@@ -12,9 +12,16 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 const appName = "Technically (not) NFTs";
 document.title = appName;
 
+const statusPanel = document.querySelector<HTMLDivElement>("#statusPanel")!;
+
 const header = document.createElement("h1");
 header.innerHTML = appName;
-app.prepend(header);
+statusPanel.append(header);
+
+const playerTokens = 0;
+const tokenMessage = document.createElement("p");
+tokenMessage.innerHTML = `Tokens: ${playerTokens}`;
+statusPanel.append(tokenMessage);
 
 const OAKES_CLASSROOM = leaflet.latLng(36.98949379578401, -122.06277128548504);
 
