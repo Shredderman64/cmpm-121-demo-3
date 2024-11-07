@@ -23,7 +23,7 @@ statusPanel.append(header);
 //   j: number
 // }
 
-const playerTokens = 0;
+let playerTokens = 0;
 const tokenMessage = document.createElement("p");
 tokenMessage.innerHTML = `Tokens: <span id=value>${playerTokens}</span>`;
 statusPanel.append(tokenMessage);
@@ -52,18 +52,47 @@ const playerMarker = leaflet.marker(playerLocation);
 playerMarker.bindTooltip("Hi");
 playerMarker.addTo(map);
 
+function createCachePopup(i: number, j: number, rect: leaflet.Rectangle) {
+  let tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
+
+  rect.bindPopup(() => {
+    const popupDiv = document.createElement("div");
+    popupDiv.innerHTML =
+      `<div>Cache at ${i}, ${j}. There are <span id=value>${tokenCount}</span> tokens</div>.
+      <button id=take>Take</button>
+      <button id=leave>Leave</button>`;
+
+    popupDiv.querySelector<HTMLButtonElement>("#take")!
+      .addEventListener("click", () => {
+        if (tokenCount > 0) tokenCount = collectToken(tokenCount, popupDiv);
+      });
+    popupDiv.querySelector<HTMLButtonElement>("#leave")!
+      .addEventListener("click", () => {
+        if (playerTokens > 0) tokenCount = leaveToken(tokenCount, popupDiv);
+      });
+    return popupDiv;
+  });
+}
+
 function collectToken(tokenCount: number, popupDiv: HTMLDivElement) {
   tokenCount--;
-  popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = tokenCount
-    .toString();
+  playerTokens++;
+  updateCounters(tokenCount, popupDiv);
   return tokenCount;
 }
 
 function leaveToken(tokenCount: number, popupDiv: HTMLDivElement) {
   tokenCount++;
+  playerTokens--;
+  updateCounters(tokenCount, popupDiv);
+  return tokenCount;
+}
+
+function updateCounters(tokenCount: number, popupDiv: HTMLDivElement) {
   popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = tokenCount
     .toString();
-  return tokenCount;
+  statusPanel.querySelector<HTMLSpanElement>("#value")!.innerHTML = playerTokens
+    .toString();
 }
 
 function spawnCache(i: number, j: number) {
@@ -75,25 +104,7 @@ function spawnCache(i: number, j: number) {
 
   const rect = leaflet.rectangle(bounds);
   rect.addTo(map);
-
-  let tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
-  rect.bindPopup(() => {
-    const popupDiv = document.createElement("div");
-    popupDiv.innerHTML =
-      `<div>Cache at ${i}, ${j}. There are <span id=value>${tokenCount}</span> tokens</div>.
-      <button id=take>Take</button>
-      <button id=leave>Leave</button>`;
-
-    popupDiv.querySelector<HTMLButtonElement>("#take")!
-      .addEventListener("click", () => {
-        tokenCount = collectToken(tokenCount, popupDiv);
-      });
-    popupDiv.querySelector<HTMLButtonElement>("#leave")!
-      .addEventListener("click", () => {
-        tokenCount = leaveToken(tokenCount, popupDiv);
-      });
-    return popupDiv;
-  });
+  createCachePopup(i, j, rect);
 }
 
 for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
