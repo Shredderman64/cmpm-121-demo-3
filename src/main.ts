@@ -23,9 +23,9 @@ statusPanel.append(header);
 //   j: number
 // }
 
-const playerTokens = [];
+const playerTokens = 0;
 const tokenMessage = document.createElement("p");
-tokenMessage.innerHTML = `Tokens: ${playerTokens.length}`;
+tokenMessage.innerHTML = `Tokens: <span id=value>${playerTokens}</span>`;
 statusPanel.append(tokenMessage);
 
 const OAKES_CLASSROOM = leaflet.latLng(36.98949379578401, -122.06277128548504);
@@ -52,6 +52,20 @@ const playerMarker = leaflet.marker(playerLocation);
 playerMarker.bindTooltip("Hi");
 playerMarker.addTo(map);
 
+function collectToken(tokenCount: number, popupDiv: HTMLDivElement) {
+  tokenCount--;
+  popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = tokenCount
+    .toString();
+  return tokenCount;
+}
+
+function leaveToken(tokenCount: number, popupDiv: HTMLDivElement) {
+  tokenCount++;
+  popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = tokenCount
+    .toString();
+  return tokenCount;
+}
+
 function spawnCache(i: number, j: number) {
   const origin = OAKES_CLASSROOM;
   const bounds = leaflet.latLngBounds([
@@ -62,13 +76,22 @@ function spawnCache(i: number, j: number) {
   const rect = leaflet.rectangle(bounds);
   rect.addTo(map);
 
-  const tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
+  let tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
   rect.bindPopup(() => {
     const popupDiv = document.createElement("div");
     popupDiv.innerHTML =
       `<div>Cache at ${i}, ${j}. There are <span id=value>${tokenCount}</span> tokens</div>.
       <button id=take>Take</button>
       <button id=leave>Leave</button>`;
+
+    popupDiv.querySelector<HTMLButtonElement>("#take")!
+      .addEventListener("click", () => {
+        tokenCount = collectToken(tokenCount, popupDiv);
+      });
+    popupDiv.querySelector<HTMLButtonElement>("#leave")!
+      .addEventListener("click", () => {
+        tokenCount = leaveToken(tokenCount, popupDiv);
+      });
     return popupDiv;
   });
 }
