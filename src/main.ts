@@ -1,4 +1,5 @@
 // todo
+import { Board } from "./board.ts";
 import leaflet from "leaflet";
 import luck from "./luck.ts";
 
@@ -16,11 +17,6 @@ const header = document.createElement("h1");
 header.innerHTML = appName;
 statusPanel.append(header);
 
-// interface Token {
-//   i: number,
-//   j: number
-// }
-
 let playerTokens = 0;
 const tokenMessage = document.createElement("p");
 tokenMessage.innerHTML = `Tokens: <span id=value>${playerTokens}</span>`;
@@ -32,6 +28,8 @@ const ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
 const NEIGHBORHOOD_SIZE = 8;
 const DROP_CHANCE = 0.1;
+
+const neighborhood = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 
 const map = leaflet.map(document.getElementById("map")!, {
   center: OAKES_CLASSROOM,
@@ -49,6 +47,12 @@ const playerLocation = OAKES_CLASSROOM;
 const playerMarker = leaflet.marker(playerLocation);
 playerMarker.bindTooltip("Hi");
 playerMarker.addTo(map);
+
+function spawnCache(i: number, j: number, bounds: leaflet.LatLngBounds) {
+  const rect = leaflet.rectangle(bounds);
+  rect.addTo(map);
+  createCachePopup(i, j, rect);
+}
 
 function createCachePopup(i: number, j: number, rect: leaflet.Rectangle) {
   let tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
@@ -98,22 +102,9 @@ function updateCounters(tokenCount: number, popupDiv: HTMLDivElement) {
     .toString();
 }
 
-function spawnCache(i: number, j: number) {
-  const origin = OAKES_CLASSROOM;
-  const bounds = leaflet.latLngBounds([
-    [origin.lat + i * TILE_DEGREES, origin.lng + j * TILE_DEGREES],
-    [origin.lat + (i + 1) * TILE_DEGREES, origin.lng + (j + 1) * TILE_DEGREES],
-  ]);
-
-  const rect = leaflet.rectangle(bounds);
-  rect.addTo(map);
-  createCachePopup(i, j, rect);
-}
-
-for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
-  for (let j = -NEIGHBORHOOD_SIZE; j < NEIGHBORHOOD_SIZE; j++) {
-    if (luck([i, j].toString()) < DROP_CHANCE) {
-      spawnCache(i, j);
-    }
+const cells = neighborhood.getCellsNearPoint(playerLocation);
+for (const cell of cells) {
+  if (luck([cell.i, cell.j].toString()) < DROP_CHANCE) {
+    spawnCache(cell.i, cell.j, neighborhood.getCellBounds(cell));
   }
 }

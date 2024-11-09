@@ -22,16 +22,32 @@ export class Board {
   }
 
   getCellForPoint(point: leaflet.LatLng): Cell {
+    console.log(point);
     return this.getCanonicalCell({
       i: Math.trunc(point.lat / this.tileWidth),
       j: Math.trunc(point.lng / this.tileWidth),
     });
   }
 
-  getCellBounds(cell: Cell) {
+  getCellBounds(cell: Cell): leaflet.LatLngBounds {
     return leaflet.latLngBounds([
       [cell.i * this.tileWidth, cell.j * this.tileWidth],
       [(cell.i + 1) * this.tileWidth, (cell.j + 1) * this.tileWidth],
     ]);
+  }
+
+  getCellsNearPoint(point: leaflet.LatLng) {
+    const resultCells: Cell[] = [];
+    const radius = this.neighborhoodRadius * this.tileWidth;
+
+    for (let i = -radius; i < radius; i += this.tileWidth) {
+      for (let j = -radius; j < radius; j += this.tileWidth) {
+        resultCells.push(this.getCellForPoint(
+          leaflet.latLng(point.lat + i, point.lng + j),
+        ));
+      }
+    }
+
+    return resultCells;
   }
 }
