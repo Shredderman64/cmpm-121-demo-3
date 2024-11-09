@@ -7,8 +7,6 @@ import "./style.css";
 
 import "./leafletWorkaround.ts";
 
-const app = document.querySelector<HTMLDivElement>("#app")!;
-
 const appName = "Technically (not) NFTs";
 document.title = appName;
 
@@ -64,27 +62,32 @@ function createCachePopup(i: number, j: number, rect: leaflet.Rectangle) {
 
     popupDiv.querySelector<HTMLButtonElement>("#take")!
       .addEventListener("click", () => {
-        if (tokenCount > 0) tokenCount = collectToken(tokenCount, popupDiv);
+        tokenCount = collectToken(tokenCount, popupDiv);
       });
     popupDiv.querySelector<HTMLButtonElement>("#leave")!
       .addEventListener("click", () => {
-        if (playerTokens > 0) tokenCount = leaveToken(tokenCount, popupDiv);
+        tokenCount = leaveToken(tokenCount, popupDiv);
       });
+
     return popupDiv;
   });
 }
 
 function collectToken(tokenCount: number, popupDiv: HTMLDivElement) {
-  tokenCount--;
-  playerTokens++;
-  updateCounters(tokenCount, popupDiv);
+  if (tokenCount > 0) {
+    tokenCount--;
+    playerTokens++;
+    updateCounters(tokenCount, popupDiv);
+  }
   return tokenCount;
 }
 
 function leaveToken(tokenCount: number, popupDiv: HTMLDivElement) {
-  tokenCount++;
-  playerTokens--;
-  updateCounters(tokenCount, popupDiv);
+  if (playerTokens > 0) {
+    tokenCount++;
+    playerTokens--;
+    updateCounters(tokenCount, popupDiv);
+  }
   return tokenCount;
 }
 
@@ -114,10 +117,3 @@ for (let i = -NEIGHBORHOOD_SIZE; i < NEIGHBORHOOD_SIZE; i++) {
     }
   }
 }
-
-const uselessButton = document.createElement("button");
-uselessButton.innerHTML = "Click me";
-uselessButton.addEventListener("click", () => {
-  alert("You clicked the button");
-});
-app.append(uselessButton);
