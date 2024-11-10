@@ -8,6 +8,12 @@ import "./style.css";
 
 import "./leafletWorkaround.ts";
 
+interface Token {
+  i: number;
+  j: number;
+  serial: number;
+}
+
 const appName = "Technically (not) NFTs";
 document.title = appName;
 
@@ -17,9 +23,9 @@ const header = document.createElement("h1");
 header.innerHTML = appName;
 statusPanel.append(header);
 
-let playerTokens = 0;
+const playerTokens: Token[] = [];
 const tokenMessage = document.createElement("p");
-tokenMessage.innerHTML = `Tokens: <span id=value>${playerTokens}</span>`;
+tokenMessage.innerHTML = `Tokens: <span id=value>${playerTokens.length}</span>`;
 statusPanel.append(tokenMessage);
 
 const OAKES_CLASSROOM = leaflet.latLng(36.98949379578401, -122.06277128548504);
@@ -55,51 +61,54 @@ function spawnCache(i: number, j: number, bounds: leaflet.LatLngBounds) {
 }
 
 function createCachePopup(i: number, j: number, rect: leaflet.Rectangle) {
-  let tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
+  const tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
+  const tokenCache: Token[] = [];
+
+  for (let serial = 0; serial < tokenCount; serial++) {
+    tokenCache.push({ i, j, serial });
+  }
 
   rect.bindPopup(() => {
     const popupDiv = document.createElement("div");
     popupDiv.innerHTML =
-      `<div>Cache at ${i}, ${j}. There are <span id=value>${tokenCount}</span> tokens</div>.
+      `<div>Cache at ${i}, ${j}. There are <span id=value>${tokenCache.length}</span> tokens</div>.
       <button id=take>Take</button>
       <button id=leave>Leave</button>`;
 
     popupDiv.querySelector<HTMLButtonElement>("#take")!
       .addEventListener("click", () => {
-        tokenCount = collectToken(tokenCount, popupDiv);
+        collectToken(tokenCache);
+        updateCounters(tokenCache, popupDiv);
       });
     popupDiv.querySelector<HTMLButtonElement>("#leave")!
       .addEventListener("click", () => {
-        tokenCount = leaveToken(tokenCount, popupDiv);
+        leaveToken(tokenCache);
+        updateCounters(tokenCache, popupDiv);
       });
 
     return popupDiv;
   });
 }
 
-function collectToken(tokenCount: number, popupDiv: HTMLDivElement) {
-  if (tokenCount > 0) {
-    tokenCount--;
-    playerTokens++;
-    updateCounters(tokenCount, popupDiv);
+function collectToken(tokenCache: Token[]) {
+  if (tokenCache.length > 0) {
+    const token = tokenCache.shift();
+    playerTokens.push(token!);
   }
-  return tokenCount;
 }
 
-function leaveToken(tokenCount: number, popupDiv: HTMLDivElement) {
-  if (playerTokens > 0) {
-    tokenCount++;
-    playerTokens--;
-    updateCounters(tokenCount, popupDiv);
+function leaveToken(tokenCache: Token[]) {
+  if (playerTokens.length > 0) {
+    const token = playerTokens.shift();
+    tokenCache.push(token!);
   }
-  return tokenCount;
 }
 
-function updateCounters(tokenCount: number, popupDiv: HTMLDivElement) {
-  popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML = tokenCount
-    .toString();
-  statusPanel.querySelector<HTMLSpanElement>("#value")!.innerHTML = playerTokens
-    .toString();
+function updateCounters(tokenCache: Token[], popupDiv: HTMLDivElement) {
+  popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
+    `${tokenCache.length}`;
+  statusPanel.querySelector<HTMLSpanElement>("#value")!.innerHTML =
+    `${playerTokens.length}`;
 }
 
 const cells = neighborhood.getCellsNearPoint(playerLocation);

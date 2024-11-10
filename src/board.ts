@@ -22,7 +22,6 @@ export class Board {
   }
 
   getCellForPoint(point: leaflet.LatLng): Cell {
-    console.log(point);
     return this.getCanonicalCell({
       i: Math.trunc(point.lat / this.tileWidth),
       j: Math.trunc(point.lng / this.tileWidth),
@@ -47,7 +46,6 @@ export class Board {
         ));
       }
     }
-
     return resultCells;
   }
 }
