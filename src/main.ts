@@ -73,7 +73,10 @@ function createCachePopup(i: number, j: number, rect: leaflet.Rectangle) {
     popupDiv.innerHTML =
       `<div>Cache at ${i}, ${j}. There are <span id=value>${tokenCache.length}</span> tokens</div>
       <button id=take>Take</button>
-      <button id=leave>Leave</button>`;
+      <button id=leave>Leave</button>
+      <div id=tokens></div>`;
+
+    updateCounters(tokenCache, popupDiv);
 
     popupDiv.querySelector<HTMLButtonElement>("#take")!
       .addEventListener("click", () => {
@@ -99,14 +102,17 @@ function collectToken(tokenCache: Token[]) {
 
 function leaveToken(tokenCache: Token[]) {
   if (playerTokens.length > 0) {
-    const token = playerTokens.shift();
-    tokenCache.push(token!);
+    const token = playerTokens.pop();
+    tokenCache.unshift(token!);
   }
 }
 
 function updateCounters(tokenCache: Token[], popupDiv: HTMLDivElement) {
-  popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
-    `${tokenCache.length}`;
+  const availableTokens = popupDiv.querySelector<HTMLDivElement>("#tokens")!;
+  availableTokens.innerHTML = "";
+  tokenCache.slice(0, 5).forEach((token) => {
+    availableTokens.innerHTML += `${token.i}:${token.j}#${token.serial}</br>`;
+  });
 
   const playerInventory = statusPanel.querySelector<HTMLDivElement>("#tokens")!;
   playerInventory.innerHTML = "";
