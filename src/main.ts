@@ -25,7 +25,7 @@ statusPanel.append(header);
 
 const playerTokens: Token[] = [];
 const tokenMessage = document.createElement("p");
-tokenMessage.innerHTML = `Tokens: <span id=value>${playerTokens.length}</span>`;
+tokenMessage.innerHTML = `Inventory: <div id=tokens></div>`;
 statusPanel.append(tokenMessage);
 
 const OAKES_CLASSROOM = leaflet.latLng(36.98949379578401, -122.06277128548504);
@@ -71,7 +71,7 @@ function createCachePopup(i: number, j: number, rect: leaflet.Rectangle) {
   rect.bindPopup(() => {
     const popupDiv = document.createElement("div");
     popupDiv.innerHTML =
-      `<div>Cache at ${i}, ${j}. There are <span id=value>${tokenCache.length}</span> tokens</div>.
+      `<div>Cache at ${i}, ${j}. There are <span id=value>${tokenCache.length}</span> tokens</div>
       <button id=take>Take</button>
       <button id=leave>Leave</button>`;
 
@@ -107,8 +107,12 @@ function leaveToken(tokenCache: Token[]) {
 function updateCounters(tokenCache: Token[], popupDiv: HTMLDivElement) {
   popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
     `${tokenCache.length}`;
-  statusPanel.querySelector<HTMLSpanElement>("#value")!.innerHTML =
-    `${playerTokens.length}`;
+
+  const playerInventory = statusPanel.querySelector<HTMLDivElement>("#tokens")!;
+  playerInventory.innerHTML = "";
+  playerTokens.forEach((token) => {
+    playerInventory.innerHTML += `${token.i}:${token.j}#${token.serial}</br>`;
+  });
 }
 
 const cells = neighborhood.getCellsNearPoint(playerLocation);
