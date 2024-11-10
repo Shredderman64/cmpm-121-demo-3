@@ -70,8 +70,7 @@ function createCachePopup(i: number, j: number, rect: leaflet.Rectangle) {
 
   rect.bindPopup(() => {
     const popupDiv = document.createElement("div");
-    popupDiv.innerHTML =
-      `<div>Cache at ${i}, ${j}. There are <span id=value>${tokenCache.length}</span> tokens</div>
+    popupDiv.innerHTML = `<div>Cache at ${i}, ${j}</div>
       <button id=take>Take</button>
       <button id=leave>Leave</button>
       <div id=tokens></div>`;
