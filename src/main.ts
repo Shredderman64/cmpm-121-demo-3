@@ -22,7 +22,7 @@ interface Token {
 const appName = "Technically (not) NFTs";
 document.title = appName;
 
-const statusPanel = document.querySelector<HTMLDivElement>("#statusPanel")!;
+const statusPanel = document.getElementById("statusPanel")!;
 
 const header = document.createElement("h1");
 header.innerHTML = appName;
@@ -59,13 +59,34 @@ const playerMarker = leaflet.marker(playerLocation);
 playerMarker.bindTooltip("Hi");
 playerMarker.addTo(map);
 
-const controlPanel = document.querySelector<HTMLDivElement>("#controlPanel")!;
+function moveTo(direction: string) {
+  switch (direction) {
+    case "north":
+      playerLocation.lat += TILE_DEGREES;
+      break;
+    case "east":
+      playerLocation.lng += TILE_DEGREES;
+      break;
+    case "south":
+      playerLocation.lat -= TILE_DEGREES;
+      break;
+    case "west":
+      playerLocation.lng -= TILE_DEGREES;
+      break;
+    default:
+      throw new Error("Invalid direction");
+  }
+  playerMarker.setLatLng(playerLocation);
+}
 
-controlPanel.querySelector<HTMLButtonElement>("#north")!
-  .addEventListener("click", () => {
-    playerLocation.lat += TILE_DEGREES;
-    playerMarker.setLatLng(playerLocation);
+const controlPanel = document.getElementById("controlPanel")!;
+const moveButtons = controlPanel.querySelectorAll(".move");
+
+moveButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    moveTo(button.id);
   });
+});
 
 function spawnCache(i: number, j: number, bounds: leaflet.LatLngBounds) {
   const rect = leaflet.rectangle(bounds);
