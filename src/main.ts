@@ -14,6 +14,11 @@ interface Token {
   serial: number;
 }
 
+// interface Momento<T> {
+//   toMomento() : T;
+//   fromMomento(momento: T): void;
+// }
+
 const appName = "Technically (not) NFTs";
 document.title = appName;
 
@@ -53,6 +58,14 @@ const playerLocation = OAKES_CLASSROOM;
 const playerMarker = leaflet.marker(playerLocation);
 playerMarker.bindTooltip("Hi");
 playerMarker.addTo(map);
+
+const controlPanel = document.querySelector<HTMLDivElement>("#controlPanel")!;
+
+controlPanel.querySelector<HTMLButtonElement>("#north")!
+  .addEventListener("click", () => {
+    playerLocation.lat += TILE_DEGREES;
+    playerMarker.setLatLng(playerLocation);
+  });
 
 function spawnCache(i: number, j: number, bounds: leaflet.LatLngBounds) {
   const rect = leaflet.rectangle(bounds);
