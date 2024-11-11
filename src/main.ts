@@ -77,6 +77,7 @@ function moveTo(direction: string) {
       throw new Error("Invalid direction");
   }
   playerMarker.setLatLng(playerLocation);
+  respawnCaches();
 }
 
 const controlPanel = document.getElementById("controlPanel")!;
@@ -88,10 +89,13 @@ moveButtons.forEach((button) => {
   });
 });
 
+const caches: leaflet.Rectangle[] = [];
+
 function spawnCache(i: number, j: number, bounds: leaflet.LatLngBounds) {
   const rect = leaflet.rectangle(bounds);
   rect.addTo(map);
   createCachePopup(i, j, rect);
+  caches.push(rect);
 }
 
 function createCachePopup(i: number, j: number, rect: leaflet.Rectangle) {
@@ -154,9 +158,23 @@ function updateCounters(tokenCache: Token[], popupDiv: HTMLDivElement) {
   });
 }
 
-const cells = neighborhood.getCellsNearPoint(playerLocation);
-for (const cell of cells) {
-  if (luck([cell.i, cell.j].toString()) < DROP_CHANCE) {
-    spawnCache(cell.i, cell.j, neighborhood.getCellBounds(cell));
+function spawnCaches() {
+  const cells = neighborhood.getCellsNearPoint(playerLocation);
+  for (const cell of cells) {
+    if (luck([cell.i, cell.j].toString()) < DROP_CHANCE) {
+      spawnCache(cell.i, cell.j, neighborhood.getCellBounds(cell));
+    }
   }
 }
+
+function respawnCaches() {
+  for (let i = 0; i < caches.length; i++) {
+    const cache = caches[i];
+    cache.remove();
+  }
+  caches.splice(0, caches.length);
+  console.log(caches.length);
+  spawnCaches();
+}
+
+spawnCaches();
