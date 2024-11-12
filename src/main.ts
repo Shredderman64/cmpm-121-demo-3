@@ -14,10 +14,17 @@ interface Token {
   serial: number;
 }
 
-// interface Momento<T> {
-//   toMomento() : T;
-//   fromMomento(momento: T): void;
-// }
+interface Memento<T> {
+  toMemento(): T;
+  fromMemento(memento: T): void;
+}
+
+interface Cache {
+  i: number;
+  j: number;
+  memento: Memento<string>;
+  tokens: Token[];
+}
 
 const appName = "Technically (not) NFTs";
 document.title = appName;
@@ -89,65 +96,94 @@ moveButtons.forEach((button) => {
   });
 });
 
-const caches: leaflet.Rectangle[] = [];
+const mementos = new Map<string, string>();
+const rects: leaflet.Rectangle[] = [];
 
-function spawnCache(i: number, j: number, bounds: leaflet.LatLngBounds) {
-  const rect = leaflet.rectangle(bounds);
-  rect.addTo(map);
-
+function createCache(i: number, j: number): Cache {
   const tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
   const tokenCache: Token[] = [];
   for (let serial = 0; serial < tokenCount; serial++) {
     tokenCache.push({ i, j, serial });
   }
 
-  rect.bindPopup(createCachePopup(i, j, tokenCache));
-  caches.push(rect);
+  return {
+    i,
+    j,
+    memento: {
+      toMemento() {
+        return JSON.stringify(tokenCache);
+      },
+      fromMemento(memento: string) {
+        tokenCache.splice(0, tokenCache.length);
+        for (const token of JSON.parse(memento)) {
+          tokenCache.push(token);
+        }
+      },
+    },
+    tokens: tokenCache,
+  };
 }
 
-function createCachePopup(i: number, j: number, tokenCache: Token[]) {
+function spawnCache(i: number, j: number, bounds: leaflet.LatLngBounds) {
+  const rect = leaflet.rectangle(bounds);
+  rect.addTo(map);
+
+  const cache = createCache(i, j);
+  const cacheKey = [i, j].toString();
+  if (mementos.has(cacheKey)) {
+    cache.memento.fromMemento(mementos.get(cacheKey)!);
+  }
+
+  rect.bindPopup(createCachePopup(cache));
+  rects.push(rect);
+}
+
+function createCachePopup(cache: Cache) {
   return () => {
     const popupDiv = document.createElement("div");
-    popupDiv.innerHTML = `<div>Cache at ${i}, ${j}</div>
+    popupDiv.innerHTML = `<div>Cache at ${cache.i}, ${cache.j}</div>
       <button id=take>Take</button>
       <button id=leave>Leave</button>
       <div id=tokens></div>`;
 
-    updateCounters(tokenCache, popupDiv);
+    updateCounters(cache, popupDiv);
 
     popupDiv.querySelector<HTMLButtonElement>("#take")!
       .addEventListener("click", () => {
-        collectToken(tokenCache);
-        updateCounters(tokenCache, popupDiv);
+        collectToken(cache);
+        updateCounters(cache, popupDiv);
       });
     popupDiv.querySelector<HTMLButtonElement>("#leave")!
       .addEventListener("click", () => {
-        leaveToken(tokenCache);
-        updateCounters(tokenCache, popupDiv);
+        leaveToken(cache);
+        updateCounters(cache, popupDiv);
       });
 
     return popupDiv;
   };
 }
 
-function collectToken(tokenCache: Token[]) {
-  if (tokenCache.length > 0) {
-    const token = tokenCache.shift();
+function collectToken(cache: Cache) {
+  if (cache.tokens.length > 0) {
+    const token = cache.tokens.shift();
     playerTokens.push(token!);
   }
 }
 
-function leaveToken(tokenCache: Token[]) {
+function leaveToken(cache: Cache) {
   if (playerTokens.length > 0) {
     const token = playerTokens.pop();
-    tokenCache.unshift(token!);
+    cache.tokens.unshift(token!);
   }
 }
 
-function updateCounters(tokenCache: Token[], popupDiv: HTMLDivElement) {
+function updateCounters(cache: Cache, popupDiv: HTMLDivElement) {
+  const cacheKey = [cache.i, cache.j].toString();
+  mementos.set(cacheKey, cache.memento.toMemento());
+
   const availableTokens = popupDiv.querySelector<HTMLDivElement>("#tokens")!;
   availableTokens.innerHTML = "";
-  tokenCache.slice(0, 5).forEach((token) => {
+  cache.tokens.slice(0, 5).forEach((token) => {
     availableTokens.innerHTML += `${token.i}:${token.j}#${token.serial}</br>`;
   });
 
@@ -168,11 +204,11 @@ function spawnCaches() {
 }
 
 function respawnCaches() {
-  for (let i = 0; i < caches.length; i++) {
-    const cache = caches[i];
-    cache.remove();
+  for (let i = 0; i < rects.length; i++) {
+    const rect = rects[i];
+    rect.remove();
   }
-  caches.splice(0, caches.length);
+  rects.splice(0, rects.length);
   spawnCaches();
 }
 
