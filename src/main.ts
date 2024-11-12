@@ -84,7 +84,7 @@ function moveTo(direction: string) {
       throw new Error("Invalid direction");
   }
   playerMarker.setLatLng(playerLocation);
-  respawnCaches();
+  respawnDrops();
 }
 
 const controlPanel = document.getElementById("controlPanel")!;
@@ -97,7 +97,7 @@ moveButtons.forEach((button) => {
 });
 
 const mementos = new Map<string, string>();
-const rects: leaflet.Rectangle[] = [];
+const cacheDrops: leaflet.Rectangle[] = [];
 
 function createCache(i: number, j: number): Cache {
   const tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
@@ -124,9 +124,9 @@ function createCache(i: number, j: number): Cache {
   };
 }
 
-function spawnCache(i: number, j: number, bounds: leaflet.LatLngBounds) {
-  const rect = leaflet.rectangle(bounds);
-  rect.addTo(map);
+function spawnDrop(i: number, j: number, bounds: leaflet.LatLngBounds) {
+  const drop = leaflet.rectangle(bounds);
+  drop.addTo(map);
 
   const cache = createCache(i, j);
   const cacheKey = [i, j].toString();
@@ -134,8 +134,8 @@ function spawnCache(i: number, j: number, bounds: leaflet.LatLngBounds) {
     cache.memento.fromMemento(mementos.get(cacheKey)!);
   }
 
-  rect.bindPopup(createCachePopup(cache));
-  rects.push(rect);
+  drop.bindPopup(createCachePopup(cache));
+  cacheDrops.push(drop);
 }
 
 function createCachePopup(cache: Cache) {
@@ -194,22 +194,22 @@ function updateCounters(cache: Cache, popupDiv: HTMLDivElement) {
   });
 }
 
-function spawnCaches() {
+function spawnDrops() {
   const cells = neighborhood.getCellsNearPoint(playerLocation);
   for (const cell of cells) {
     if (luck([cell.i, cell.j].toString()) < DROP_CHANCE) {
-      spawnCache(cell.i, cell.j, neighborhood.getCellBounds(cell));
+      spawnDrop(cell.i, cell.j, neighborhood.getCellBounds(cell));
     }
   }
 }
 
-function respawnCaches() {
-  for (let i = 0; i < rects.length; i++) {
-    const rect = rects[i];
-    rect.remove();
+function respawnDrops() {
+  for (let i = 0; i < cacheDrops.length; i++) {
+    const drop = cacheDrops[i];
+    drop.remove();
   }
-  rects.splice(0, rects.length);
-  spawnCaches();
+  cacheDrops.splice(0, cacheDrops.length);
+  spawnDrops();
 }
 
-spawnCaches();
+spawnDrops();
