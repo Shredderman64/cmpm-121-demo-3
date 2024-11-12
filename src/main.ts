@@ -94,19 +94,19 @@ const caches: leaflet.Rectangle[] = [];
 function spawnCache(i: number, j: number, bounds: leaflet.LatLngBounds) {
   const rect = leaflet.rectangle(bounds);
   rect.addTo(map);
-  createCachePopup(i, j, rect);
-  caches.push(rect);
-}
 
-function createCachePopup(i: number, j: number, rect: leaflet.Rectangle) {
   const tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
   const tokenCache: Token[] = [];
-
   for (let serial = 0; serial < tokenCount; serial++) {
     tokenCache.push({ i, j, serial });
   }
 
-  rect.bindPopup(() => {
+  rect.bindPopup(createCachePopup(i, j, tokenCache));
+  caches.push(rect);
+}
+
+function createCachePopup(i: number, j: number, tokenCache: Token[]) {
+  return () => {
     const popupDiv = document.createElement("div");
     popupDiv.innerHTML = `<div>Cache at ${i}, ${j}</div>
       <button id=take>Take</button>
@@ -127,7 +127,7 @@ function createCachePopup(i: number, j: number, rect: leaflet.Rectangle) {
       });
 
     return popupDiv;
-  });
+  };
 }
 
 function collectToken(tokenCache: Token[]) {
@@ -173,7 +173,6 @@ function respawnCaches() {
     cache.remove();
   }
   caches.splice(0, caches.length);
-  console.log(caches.length);
   spawnCaches();
 }
 
