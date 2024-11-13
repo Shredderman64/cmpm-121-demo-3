@@ -61,10 +61,32 @@ leaflet.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
 }).addTo(map);
 
-const playerLocation = OAKES_CLASSROOM;
+let playerLocation = OAKES_CLASSROOM;
 const playerMarker = leaflet.marker(playerLocation);
 playerMarker.bindTooltip("Hi");
 playerMarker.addTo(map);
+
+let autoLocation = false;
+let watchId: number;
+
+function geoSuccess(pos: GeolocationPosition) {
+  centerPlayer(pos.coords.latitude, pos.coords.longitude);
+  watchId = navigator.geolocation.watchPosition((pos) => {
+    centerPlayer(pos.coords.latitude, pos.coords.longitude);
+  });
+}
+
+const controlPanel = document.getElementById("controlPanel")!;
+const sensorButton = controlPanel.querySelector<HTMLButtonElement>("#sensor")!;
+sensorButton.addEventListener("click", () => {
+  if (!autoLocation) {
+    autoLocation = true;
+    navigator.geolocation.getCurrentPosition(geoSuccess);
+  } else if (autoLocation) {
+    autoLocation = false;
+    navigator.geolocation.clearWatch(watchId);
+  }
+});
 
 function moveTo(direction: string) {
   switch (direction) {
@@ -83,11 +105,9 @@ function moveTo(direction: string) {
     default:
       throw new Error("Invalid direction");
   }
-  playerMarker.setLatLng(playerLocation);
-  respawnDrops();
+  centerPlayer(playerLocation.lat, playerLocation.lng);
 }
 
-const controlPanel = document.getElementById("controlPanel")!;
 const moveButtons = controlPanel.querySelectorAll(".move");
 
 moveButtons.forEach((button) => {
@@ -192,6 +212,13 @@ function updateCounters(cache: Cache, popupDiv: HTMLDivElement) {
   playerTokens.forEach((token) => {
     playerInventory.innerHTML += `${token.i}:${token.j}#${token.serial}</br>`;
   });
+}
+
+function centerPlayer(i: number, j: number) {
+  playerLocation = leaflet.latLng(i, j);
+  playerMarker.setLatLng(playerLocation);
+  map.panTo(playerLocation);
+  respawnDrops();
 }
 
 function spawnDrops() {
