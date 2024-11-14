@@ -295,7 +295,7 @@ function loadFromStorage() {
   tokenList.forEach((token: Token) => {
     playerTokens.push(token);
   });
-  notify("cache-updated");
+  notify("inventory-changed");
 
   const { i, j } = JSON.parse(localStorage.getItem("loc")!);
   centerPlayer(i, j);
