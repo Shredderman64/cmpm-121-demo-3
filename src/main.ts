@@ -214,6 +214,10 @@ function updateState(cache: Cache, popupDiv: HTMLDivElement) {
     availableTokens.innerHTML += `${token.i}:${token.j}#${token.serial}</br>`;
   });
 
+  displayInventory();
+}
+
+function displayInventory() {
   const playerInventory = statusPanel.querySelector<HTMLDivElement>("#tokens")!;
   playerInventory.innerHTML = "";
   playerTokens.forEach((token) => {
@@ -263,6 +267,7 @@ if (!localStorage.getItem("cache")) {
 function setStorage() {
   const mementoArray = Array.from(mementos.entries());
   localStorage.setItem("cache", JSON.stringify(mementoArray));
+  localStorage.setItem("inventory", JSON.stringify(playerTokens));
   localStorage.setItem(
     "loc",
     JSON.stringify({ i: playerLocation.lat, j: playerLocation.lng }),
@@ -270,11 +275,17 @@ function setStorage() {
 }
 
 function loadFromStorage() {
-  mementos.clear();
   const mementoArray = JSON.parse(localStorage.getItem("cache")!);
   mementoArray.forEach((cache: string) => {
     mementos.set(cache[0], cache[1]);
   });
+
+  const tokenList = JSON.parse(localStorage.getItem("inventory")!);
+  tokenList.forEach((token: Token) => {
+    playerTokens.push(token);
+  });
+  displayInventory();
+
   const { i, j } = JSON.parse(localStorage.getItem("loc")!);
   centerPlayer(i, j);
 }
