@@ -49,7 +49,7 @@ const DROP_CHANCE = 0.1;
 
 const bus = new EventTarget();
 
-type EventName = "player-moved" | "cache-updated";
+type EventName = "player-moved" | "cache-updated" | "inventory-changed";
 function notify(event: EventName) {
   bus.dispatchEvent(new Event(event));
 }
@@ -120,6 +120,15 @@ moveButtons.forEach((button) => {
   button.addEventListener("click", () => {
     moveTo(button.id);
   });
+});
+
+const resetButton = controlPanel.querySelector<HTMLButtonElement>("#reset")!;
+resetButton.addEventListener("click", () => {
+  localStorage.clear();
+  mementos.clear();
+  playerTokens.splice(0, playerTokens.length);
+  notify("inventory-changed");
+  respawnDrops();
 });
 
 const mementos = new Map<string, string>();
@@ -213,8 +222,6 @@ function updateState(cache: Cache, popupDiv: HTMLDivElement) {
   cache.tokens.slice(0, 5).forEach((token) => {
     availableTokens.innerHTML += `${token.i}:${token.j}#${token.serial}</br>`;
   });
-
-  displayInventory();
 }
 
 function displayInventory() {
@@ -255,7 +262,11 @@ function respawnDrops() {
 // console.log(localStorage.getItem("loc"))
 
 bus.addEventListener("player-moved", setStorage);
-bus.addEventListener("cache-updated", setStorage);
+bus.addEventListener("cache-updated", () => {
+  setStorage();
+  displayInventory();
+});
+bus.addEventListener("inventory-changed", displayInventory);
 
 if (!localStorage.getItem("cache")) {
   setStorage();
@@ -284,7 +295,7 @@ function loadFromStorage() {
   tokenList.forEach((token: Token) => {
     playerTokens.push(token);
   });
-  displayInventory();
+  notify("cache-updated");
 
   const { i, j } = JSON.parse(localStorage.getItem("loc")!);
   centerPlayer(i, j);
