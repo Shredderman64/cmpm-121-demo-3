@@ -49,7 +49,7 @@ const DROP_CHANCE = 0.1;
 
 const bus = new EventTarget();
 
-type EventName = "player-moved";
+type EventName = "player-moved" | "cache-updated";
 function notify(event: EventName) {
   bus.dispatchEvent(new Event(event));
 }
@@ -206,6 +206,7 @@ function leaveToken(cache: Cache) {
 function updateState(cache: Cache, popupDiv: HTMLDivElement) {
   const cacheKey = [cache.i, cache.j].toString();
   mementos.set(cacheKey, cache.memento.toMemento());
+  notify("cache-updated");
 
   const availableTokens = popupDiv.querySelector<HTMLDivElement>("#tokens")!;
   availableTokens.innerHTML = "";
@@ -250,16 +251,18 @@ function respawnDrops() {
 // console.log(localStorage.getItem("loc"))
 
 bus.addEventListener("player-moved", setStorage);
+bus.addEventListener("cache-updated", setStorage);
 
-if (!localStorage.getItem("loc")) {
+if (!localStorage.getItem("cache")) {
   setStorage();
   spawnDrops();
 } else {
   loadFromStorage();
 }
-console.log(playerLocation);
 
 function setStorage() {
+  const mementoArray = Array.from(mementos.entries());
+  localStorage.setItem("cache", JSON.stringify(mementoArray));
   localStorage.setItem(
     "loc",
     JSON.stringify({ i: playerLocation.lat, j: playerLocation.lng }),
@@ -267,6 +270,11 @@ function setStorage() {
 }
 
 function loadFromStorage() {
+  mementos.clear();
+  const mementoArray = JSON.parse(localStorage.getItem("cache")!);
+  mementoArray.forEach((cache: string) => {
+    mementos.set(cache[0], cache[1]);
+  });
   const { i, j } = JSON.parse(localStorage.getItem("loc")!);
   centerPlayer(i, j);
 }
