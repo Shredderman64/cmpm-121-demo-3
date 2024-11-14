@@ -47,6 +47,13 @@ const TILE_DEGREES = 1e-4;
 const NEIGHBORHOOD_SIZE = 8;
 const DROP_CHANCE = 0.1;
 
+const bus = new EventTarget();
+
+type EventName = "player-moved";
+function notify(event: EventName) {
+  bus.dispatchEvent(new Event(event));
+}
+
 const neighborhood = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 
 const map = leaflet.map(document.getElementById("map")!, {
@@ -91,24 +98,23 @@ sensorButton.addEventListener("click", () => {
 function moveTo(direction: string) {
   switch (direction) {
     case "north":
-      playerLocation.lat += TILE_DEGREES;
+      centerPlayer(playerLocation.lat + TILE_DEGREES, playerLocation.lng);
       break;
     case "east":
-      playerLocation.lng += TILE_DEGREES;
+      centerPlayer(playerLocation.lat, playerLocation.lng + TILE_DEGREES);
       break;
     case "south":
-      playerLocation.lat -= TILE_DEGREES;
+      centerPlayer(playerLocation.lat - TILE_DEGREES, playerLocation.lng);
       break;
     case "west":
-      playerLocation.lng -= TILE_DEGREES;
+      centerPlayer(playerLocation.lat, playerLocation.lng - TILE_DEGREES);
       break;
     default:
       throw new Error("Invalid direction");
   }
-  centerPlayer(playerLocation.lat, playerLocation.lng);
 }
 
-const moveButtons = controlPanel.querySelectorAll(".move");
+const moveButtons = controlPanel.querySelectorAll(".manual");
 
 moveButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -166,17 +172,17 @@ function createCachePopup(cache: Cache) {
       <button id=leave>Leave</button>
       <div id=tokens></div>`;
 
-    updateCounters(cache, popupDiv);
+    updateState(cache, popupDiv);
 
     popupDiv.querySelector<HTMLButtonElement>("#take")!
       .addEventListener("click", () => {
         collectToken(cache);
-        updateCounters(cache, popupDiv);
+        updateState(cache, popupDiv);
       });
     popupDiv.querySelector<HTMLButtonElement>("#leave")!
       .addEventListener("click", () => {
         leaveToken(cache);
-        updateCounters(cache, popupDiv);
+        updateState(cache, popupDiv);
       });
 
     return popupDiv;
@@ -197,7 +203,7 @@ function leaveToken(cache: Cache) {
   }
 }
 
-function updateCounters(cache: Cache, popupDiv: HTMLDivElement) {
+function updateState(cache: Cache, popupDiv: HTMLDivElement) {
   const cacheKey = [cache.i, cache.j].toString();
   mementos.set(cacheKey, cache.memento.toMemento());
 
@@ -218,6 +224,7 @@ function centerPlayer(i: number, j: number) {
   playerLocation = leaflet.latLng(i, j);
   playerMarker.setLatLng(playerLocation);
   map.panTo(playerLocation);
+  notify("player-moved");
   respawnDrops();
 }
 
@@ -239,4 +246,27 @@ function respawnDrops() {
   spawnDrops();
 }
 
-spawnDrops();
+// localStorage.clear()
+// console.log(localStorage.getItem("loc"))
+
+bus.addEventListener("player-moved", setStorage);
+
+if (!localStorage.getItem("loc")) {
+  setStorage();
+  spawnDrops();
+} else {
+  loadFromStorage();
+}
+console.log(playerLocation);
+
+function setStorage() {
+  localStorage.setItem(
+    "loc",
+    JSON.stringify({ i: playerLocation.lat, j: playerLocation.lng }),
+  );
+}
+
+function loadFromStorage() {
+  const { i, j } = JSON.parse(localStorage.getItem("loc")!);
+  centerPlayer(i, j);
+}
