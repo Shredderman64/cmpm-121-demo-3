@@ -69,7 +69,11 @@ leaflet.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 let playerLocation = OAKES_CLASSROOM;
+const polyline = leaflet.polyline([playerLocation]).addTo(map);
+
 const playerMarker = leaflet.marker(playerLocation);
+polyline.addLatLng(playerLocation);
+
 playerMarker.bindTooltip("Hi");
 playerMarker.addTo(map);
 
@@ -236,6 +240,8 @@ function centerPlayer(i: number, j: number) {
   playerLocation = leaflet.latLng(i, j);
   playerMarker.setLatLng(playerLocation);
   map.panTo(playerLocation);
+  polyline.addLatLng(playerLocation);
+
   notify("player-moved");
   respawnDrops();
 }
@@ -258,8 +264,7 @@ function respawnDrops() {
   spawnDrops();
 }
 
-// localStorage.clear()
-// console.log(localStorage.getItem("loc"))
+localStorage.clear();
 
 bus.addEventListener("player-moved", setStorage);
 bus.addEventListener("cache-updated", () => {
