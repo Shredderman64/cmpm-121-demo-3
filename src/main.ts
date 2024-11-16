@@ -69,7 +69,8 @@ leaflet.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 let playerLocation = OAKES_CLASSROOM;
-const polyline = leaflet.polyline([playerLocation]).addTo(map);
+const locationTrail: leaflet.LatLng[] = [];
+const polyline = leaflet.polyline(locationTrail).addTo(map);
 
 const playerMarker = leaflet.marker(playerLocation);
 polyline.addLatLng(playerLocation);
@@ -81,9 +82,10 @@ let autoLocation = false;
 let watchId: number;
 
 function geoSuccess(pos: GeolocationPosition) {
-  centerPlayer(pos.coords.latitude, pos.coords.longitude);
+  movePlayer(pos.coords.latitude, pos.coords.longitude);
+  resetTrail();
   watchId = navigator.geolocation.watchPosition((pos) => {
-    centerPlayer(pos.coords.latitude, pos.coords.longitude);
+    movePlayer(pos.coords.latitude, pos.coords.longitude);
   });
 }
 
@@ -102,16 +104,16 @@ sensorButton.addEventListener("click", () => {
 function moveTo(direction: string) {
   switch (direction) {
     case "north":
-      centerPlayer(playerLocation.lat + TILE_DEGREES, playerLocation.lng);
+      movePlayer(playerLocation.lat + TILE_DEGREES, playerLocation.lng);
       break;
     case "east":
-      centerPlayer(playerLocation.lat, playerLocation.lng + TILE_DEGREES);
+      movePlayer(playerLocation.lat, playerLocation.lng + TILE_DEGREES);
       break;
     case "south":
-      centerPlayer(playerLocation.lat - TILE_DEGREES, playerLocation.lng);
+      movePlayer(playerLocation.lat - TILE_DEGREES, playerLocation.lng);
       break;
     case "west":
-      centerPlayer(playerLocation.lat, playerLocation.lng - TILE_DEGREES);
+      movePlayer(playerLocation.lat, playerLocation.lng - TILE_DEGREES);
       break;
     default:
       throw new Error("Invalid direction");
@@ -131,6 +133,8 @@ resetButton.addEventListener("click", () => {
   localStorage.clear();
   mementos.clear();
   playerTokens.splice(0, playerTokens.length);
+  resetTrail();
+
   notify("inventory-changed");
   respawnDrops();
 });
@@ -236,14 +240,28 @@ function displayInventory() {
   });
 }
 
+function movePlayer(i: number, j: number) {
+  centerPlayer(i, j);
+  redrawTrail();
+  notify("player-moved");
+}
+
 function centerPlayer(i: number, j: number) {
   playerLocation = leaflet.latLng(i, j);
   playerMarker.setLatLng(playerLocation);
   map.panTo(playerLocation);
-  polyline.addLatLng(playerLocation);
 
-  notify("player-moved");
   respawnDrops();
+}
+
+function redrawTrail() {
+  locationTrail.push(playerLocation);
+  polyline.setLatLngs(locationTrail);
+}
+
+function resetTrail() {
+  locationTrail.splice(0, locationTrail.length, playerLocation);
+  polyline.setLatLngs(locationTrail);
 }
 
 function spawnDrops() {
@@ -264,7 +282,7 @@ function respawnDrops() {
   spawnDrops();
 }
 
-localStorage.clear();
+// localStorage.clear();
 
 bus.addEventListener("player-moved", setStorage);
 bus.addEventListener("cache-updated", () => {
@@ -275,6 +293,7 @@ bus.addEventListener("inventory-changed", displayInventory);
 
 if (!localStorage.getItem("cache")) {
   setStorage();
+  locationTrail.push(playerLocation);
   spawnDrops();
 } else {
   loadFromStorage();
@@ -288,6 +307,7 @@ function setStorage() {
     "loc",
     JSON.stringify({ i: playerLocation.lat, j: playerLocation.lng }),
   );
+  localStorage.setItem("trail", JSON.stringify(locationTrail));
 }
 
 function loadFromStorage() {
@@ -304,4 +324,8 @@ function loadFromStorage() {
 
   const { i, j } = JSON.parse(localStorage.getItem("loc")!);
   centerPlayer(i, j);
+
+  const pointList = JSON.parse(localStorage.getItem("trail")!);
+  locationTrail.splice(0, 0, ...pointList);
+  polyline.setLatLngs(locationTrail);
 }
