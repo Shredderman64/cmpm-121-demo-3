@@ -167,6 +167,24 @@ function createCache(i: number, j: number): Cache {
   };
 }
 
+function spawnDrops() {
+  const cells = neighborhood.getCellsNearPoint(playerLocation);
+  for (const cell of cells) {
+    if (luck([cell.i, cell.j].toString()) < DROP_CHANCE) {
+      spawnDrop(cell.i, cell.j, neighborhood.getCellBounds(cell));
+    }
+  }
+}
+
+function respawnDrops() {
+  for (let i = 0; i < cacheDrops.length; i++) {
+    const drop = cacheDrops[i];
+    drop.remove();
+  }
+  cacheDrops.splice(0, cacheDrops.length);
+  spawnDrops();
+}
+
 function spawnDrop(i: number, j: number, bounds: leaflet.LatLngBounds) {
   const drop = leaflet.rectangle(bounds);
   drop.addTo(map);
@@ -262,24 +280,6 @@ function redrawTrail() {
 function resetTrail() {
   locationTrail.splice(0, locationTrail.length, playerLocation);
   polyline.setLatLngs(locationTrail);
-}
-
-function spawnDrops() {
-  const cells = neighborhood.getCellsNearPoint(playerLocation);
-  for (const cell of cells) {
-    if (luck([cell.i, cell.j].toString()) < DROP_CHANCE) {
-      spawnDrop(cell.i, cell.j, neighborhood.getCellBounds(cell));
-    }
-  }
-}
-
-function respawnDrops() {
-  for (let i = 0; i < cacheDrops.length; i++) {
-    const drop = cacheDrops[i];
-    drop.remove();
-  }
-  cacheDrops.splice(0, cacheDrops.length);
-  spawnDrops();
 }
 
 // localStorage.clear();
