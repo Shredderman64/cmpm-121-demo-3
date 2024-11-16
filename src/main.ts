@@ -248,7 +248,8 @@ function updateState(cache: Cache, popupDiv: HTMLDivElement) {
   const availableTokens = popupDiv.querySelector<HTMLDivElement>("#tokens")!;
   availableTokens.innerHTML = "";
   cache.tokens.slice(0, 5).forEach((token) => {
-    availableTokens.innerHTML += `${token.i}:${token.j}#${token.serial}</br>`;
+    const tokenId = createTokenIdentifier(token);
+    availableTokens.append(tokenId);
   });
 }
 
@@ -256,8 +257,18 @@ function displayInventory() {
   const playerInventory = statusPanel.querySelector<HTMLDivElement>("#tokens")!;
   playerInventory.innerHTML = "";
   playerTokens.forEach((token) => {
-    playerInventory.innerHTML += `${token.i}:${token.j}#${token.serial}</br>`;
+    const tokenId = createTokenIdentifier(token);
+    playerInventory.append(tokenId);
   });
+}
+
+function createTokenIdentifier(token: Token) {
+  const tokenId = document.createElement("div");
+  tokenId.innerHTML += `<div>${token.i}:${token.j}#${token.serial}</div>`;
+  tokenId.addEventListener("click", () => {
+    map.panTo(leaflet.latLng(token.i * TILE_DEGREES, token.j * TILE_DEGREES));
+  });
+  return tokenId;
 }
 
 function movePlayer(i: number, j: number) {
@@ -283,8 +294,6 @@ function resetTrail() {
   locationTrail.splice(0, locationTrail.length, playerLocation);
   polyline.setLatLngs(locationTrail);
 }
-
-// localStorage.clear();
 
 bus.addEventListener("player-moved", setStorage);
 bus.addEventListener("cache-updated", () => {
