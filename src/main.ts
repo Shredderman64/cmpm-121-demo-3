@@ -130,13 +130,15 @@ moveButtons.forEach((button) => {
 
 const resetButton = controlPanel.querySelector<HTMLButtonElement>("#reset")!;
 resetButton.addEventListener("click", () => {
-  localStorage.clear();
-  mementos.clear();
-  playerTokens.splice(0, playerTokens.length);
-  resetTrail();
+  if (confirm("Are you sure you want erase your current state?")) {
+    localStorage.clear();
+    mementos.clear();
+    playerTokens.splice(0, playerTokens.length);
+    resetTrail();
 
-  notify("inventory-changed");
-  respawnDrops();
+    notify("inventory-changed");
+    respawnDrops();
+  }
 });
 
 const mementos = new Map<string, string>();
