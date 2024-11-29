@@ -59,9 +59,6 @@ const neighborhood = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 
 const mapManager = new MapManager("map", OAKES_CLASSROOM, ZOOM_LEVEL);
 
-let playerLocation = OAKES_CLASSROOM;
-const locationTrail: leaflet.LatLng[] = [];
-
 let autoLocation = false;
 let watchId: number;
 
@@ -88,16 +85,28 @@ sensorButton.addEventListener("click", () => {
 function moveTo(direction: string) {
   switch (direction) {
     case "north":
-      movePlayer(playerLocation.lat + TILE_DEGREES, playerLocation.lng);
+      movePlayer(
+        mapManager.location.lat + TILE_DEGREES,
+        mapManager.location.lng,
+      );
       break;
     case "east":
-      movePlayer(playerLocation.lat, playerLocation.lng + TILE_DEGREES);
+      movePlayer(
+        mapManager.location.lat,
+        mapManager.location.lng + TILE_DEGREES,
+      );
       break;
     case "south":
-      movePlayer(playerLocation.lat - TILE_DEGREES, playerLocation.lng);
+      movePlayer(
+        mapManager.location.lat - TILE_DEGREES,
+        mapManager.location.lng,
+      );
       break;
     case "west":
-      movePlayer(playerLocation.lat, playerLocation.lng - TILE_DEGREES);
+      movePlayer(
+        mapManager.location.lat,
+        mapManager.location.lng - TILE_DEGREES,
+      );
       break;
     default:
       throw new Error("Invalid direction");
@@ -154,7 +163,7 @@ function createCache(i: number, j: number): Cache {
 }
 
 function spawnDrops() {
-  const cells = neighborhood.getCellsNearPoint(playerLocation);
+  const cells = neighborhood.getCellsNearPoint(mapManager.location);
   for (const cell of cells) {
     if (luck([cell.i, cell.j].toString()) < DROP_CHANCE) {
       spawnDrop(cell.i, cell.j, neighborhood.getCellBounds(cell));
@@ -258,27 +267,32 @@ function createTokenIdentifier(token: Token) {
 }
 
 function movePlayer(i: number, j: number) {
-  centerPlayer(i, j);
-  redrawTrail();
+  mapManager.centerPlayer(i, j);
+  respawnDrops();
+  mapManager.redrawTrail();
   notify("player-moved");
 }
 
 function centerPlayer(i: number, j: number) {
-  playerLocation = leaflet.latLng(i, j);
-  mapManager.playerMarker.setLatLng(playerLocation);
-  mapManager.map.panTo(playerLocation);
+  mapManager.location = leaflet.latLng(i, j);
+  mapManager.playerMarker.setLatLng(mapManager.location);
+  mapManager.map.panTo(mapManager.location);
 
   respawnDrops();
 }
 
-function redrawTrail() {
-  locationTrail.push(playerLocation);
-  mapManager.trail.setLatLngs(locationTrail);
-}
+// function redrawTrail() {
+//   locationTrail.push(mapManager.location);
+//   mapManager.trail.setLatLngs(locationTrail);
+// }
 
 function resetTrail() {
-  locationTrail.splice(0, locationTrail.length, playerLocation);
-  mapManager.trail.setLatLngs(locationTrail);
+  mapManager.locationTrail.splice(
+    0,
+    mapManager.locationTrail.length,
+    mapManager.location,
+  );
+  mapManager.trail.setLatLngs(mapManager.locationTrail);
 }
 
 bus.addEventListener("player-moved", setStorage);
@@ -290,7 +304,7 @@ bus.addEventListener("inventory-changed", displayInventory);
 
 if (!localStorage.getItem("cache")) {
   setStorage();
-  locationTrail.push(playerLocation);
+  mapManager.locationTrail.push(mapManager.location);
   spawnDrops();
 } else {
   loadFromStorage();
@@ -302,9 +316,9 @@ function setStorage() {
   localStorage.setItem("inventory", JSON.stringify(playerTokens));
   localStorage.setItem(
     "loc",
-    JSON.stringify({ i: playerLocation.lat, j: playerLocation.lng }),
+    JSON.stringify({ i: mapManager.location.lat, j: mapManager.location.lng }),
   );
-  localStorage.setItem("trail", JSON.stringify(locationTrail));
+  localStorage.setItem("trail", JSON.stringify(mapManager.locationTrail));
 }
 
 function loadFromStorage() {
@@ -323,6 +337,6 @@ function loadFromStorage() {
   centerPlayer(i, j);
 
   const pointList = JSON.parse(localStorage.getItem("trail")!);
-  locationTrail.splice(0, 0, ...pointList);
-  mapManager.trail.setLatLngs(locationTrail);
+  mapManager.locationTrail.splice(0, 0, ...pointList);
+  mapManager.trail.setLatLngs(mapManager.locationTrail);
 }
