@@ -3,7 +3,7 @@ import leaflet from "leaflet";
 export class MapManager {
   public map: leaflet.Map;
   public playerMarker: leaflet.Marker;
-  public trail: leaflet.Polyline;
+  public polyline: leaflet.Polyline;
   public location: leaflet.LatLng;
   public locationTrail: leaflet.LatLng[] = [];
 
@@ -24,7 +24,7 @@ export class MapManager {
       .bindTooltip("Hi")
       .addTo(this.map);
 
-    this.trail = leaflet.polyline([])
+    this.polyline = leaflet.polyline([])
       .addLatLng(initLoc)
       .addTo(this.map);
 
@@ -34,8 +34,13 @@ export class MapManager {
   getLat() {
     return this.location.lat;
   }
+
   getLng() {
     return this.location.lng;
+  }
+
+  getTrail() {
+    return this.locationTrail;
   }
 
   centerPlayer(i: number, j: number) {
@@ -45,7 +50,12 @@ export class MapManager {
   }
 
   redrawTrail() {
-    this.locationTrail.push(this.location);
-    this.trail.setLatLngs(this.locationTrail);
+    this.getTrail().push(this.location);
+    this.polyline.setLatLngs(this.getTrail());
+  }
+
+  resetTrail() {
+    this.getTrail().splice(0, this.getTrail().length, this.location);
+    this.polyline.setLatLngs(this.getTrail());
   }
 }

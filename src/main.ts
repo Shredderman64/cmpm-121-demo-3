@@ -64,7 +64,7 @@ let watchId: number;
 
 function geoSuccess(pos: GeolocationPosition) {
   movePlayer(pos.coords.latitude, pos.coords.longitude);
-  resetTrail();
+  mapManager.resetTrail();
   watchId = navigator.geolocation.watchPosition((pos) => {
     movePlayer(pos.coords.latitude, pos.coords.longitude);
   });
@@ -85,28 +85,16 @@ sensorButton.addEventListener("click", () => {
 function moveTo(direction: string) {
   switch (direction) {
     case "north":
-      movePlayer(
-        mapManager.location.lat + TILE_DEGREES,
-        mapManager.location.lng,
-      );
+      movePlayer(mapManager.getLat() + TILE_DEGREES, mapManager.getLng());
       break;
     case "east":
-      movePlayer(
-        mapManager.location.lat,
-        mapManager.location.lng + TILE_DEGREES,
-      );
+      movePlayer(mapManager.getLat(), mapManager.getLng() + TILE_DEGREES);
       break;
     case "south":
-      movePlayer(
-        mapManager.location.lat - TILE_DEGREES,
-        mapManager.location.lng,
-      );
+      movePlayer(mapManager.getLat() - TILE_DEGREES, mapManager.getLng());
       break;
     case "west":
-      movePlayer(
-        mapManager.location.lat,
-        mapManager.location.lng - TILE_DEGREES,
-      );
+      movePlayer(mapManager.getLat(), mapManager.getLng() - TILE_DEGREES);
       break;
     default:
       throw new Error("Invalid direction");
@@ -127,7 +115,7 @@ resetButton.addEventListener("click", () => {
     localStorage.clear();
     mementos.clear();
     playerTokens.splice(0, playerTokens.length);
-    resetTrail();
+    mapManager.resetTrail();
 
     notify("inventory-changed");
     respawnDrops();
@@ -273,28 +261,6 @@ function movePlayer(i: number, j: number) {
   notify("player-moved");
 }
 
-function centerPlayer(i: number, j: number) {
-  mapManager.location = leaflet.latLng(i, j);
-  mapManager.playerMarker.setLatLng(mapManager.location);
-  mapManager.map.panTo(mapManager.location);
-
-  respawnDrops();
-}
-
-// function redrawTrail() {
-//   locationTrail.push(mapManager.location);
-//   mapManager.trail.setLatLngs(locationTrail);
-// }
-
-function resetTrail() {
-  mapManager.locationTrail.splice(
-    0,
-    mapManager.locationTrail.length,
-    mapManager.location,
-  );
-  mapManager.trail.setLatLngs(mapManager.locationTrail);
-}
-
 bus.addEventListener("player-moved", setStorage);
 bus.addEventListener("cache-updated", () => {
   setStorage();
@@ -304,7 +270,7 @@ bus.addEventListener("inventory-changed", displayInventory);
 
 if (!localStorage.getItem("cache")) {
   setStorage();
-  mapManager.locationTrail.push(mapManager.location);
+  mapManager.getTrail().push(mapManager.location);
   spawnDrops();
 } else {
   loadFromStorage();
@@ -316,9 +282,9 @@ function setStorage() {
   localStorage.setItem("inventory", JSON.stringify(playerTokens));
   localStorage.setItem(
     "loc",
-    JSON.stringify({ i: mapManager.location.lat, j: mapManager.location.lng }),
+    JSON.stringify({ i: mapManager.getLat(), j: mapManager.getLng() }),
   );
-  localStorage.setItem("trail", JSON.stringify(mapManager.locationTrail));
+  localStorage.setItem("trail", JSON.stringify(mapManager.getTrail()));
 }
 
 function loadFromStorage() {
@@ -334,9 +300,10 @@ function loadFromStorage() {
   notify("inventory-changed");
 
   const { i, j } = JSON.parse(localStorage.getItem("loc")!);
-  centerPlayer(i, j);
+  mapManager.centerPlayer(i, j);
+  respawnDrops();
 
   const pointList = JSON.parse(localStorage.getItem("trail")!);
-  mapManager.locationTrail.splice(0, 0, ...pointList);
-  mapManager.trail.setLatLngs(mapManager.locationTrail);
+  mapManager.getTrail().splice(0, 0, ...pointList);
+  mapManager.polyline.setLatLngs(mapManager.getTrail());
 }
