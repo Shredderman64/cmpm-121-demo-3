@@ -1,7 +1,6 @@
 // todo
 import { Board } from "./board.ts";
 import { MapManager } from "./mapManager.ts";
-import leaflet from "leaflet";
 import luck from "./luck.ts";
 
 import "leaflet/dist/leaflet.css";
@@ -41,8 +40,6 @@ const tokenMessage = document.createElement("p");
 tokenMessage.innerHTML = `Inventory: <div id=tokens></div>`;
 statusPanel.append(tokenMessage);
 
-const OAKES_CLASSROOM = leaflet.latLng(36.98949379578401, -122.06277128548504);
-
 const ZOOM_LEVEL = 19;
 const TILE_DEGREES = 1e-4;
 const NEIGHBORHOOD_SIZE = 8;
@@ -55,9 +52,9 @@ function notify(event: EventName) {
   bus.dispatchEvent(new Event(event));
 }
 
-const neighborhood = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
+const mapManager = new MapManager("map", ZOOM_LEVEL);
 
-const mapManager = new MapManager("map", OAKES_CLASSROOM, ZOOM_LEVEL);
+const neighborhood = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 
 let autoLocation = false;
 let watchId: number;
@@ -260,7 +257,7 @@ bus.addEventListener("inventory-changed", displayInventory);
 
 if (!localStorage.getItem("cache")) {
   setStorage();
-  mapManager.getTrail().push(mapManager.getLoc());
+  mapManager.initTrail();
   spawnDrops();
 } else {
   loadFromStorage();
@@ -294,6 +291,5 @@ function loadFromStorage() {
   respawnDrops();
 
   const pointList = JSON.parse(localStorage.getItem("trail")!);
-  mapManager.getTrail().splice(0, 0, ...pointList);
-  mapManager.polyline.setLatLngs(mapManager.getTrail());
+  mapManager.setTrail(pointList);
 }

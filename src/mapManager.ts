@@ -1,14 +1,15 @@
 import leaflet from "leaflet";
 
 export class MapManager {
-  public map: leaflet.Map;
-  public playerMarker: leaflet.Marker;
-  public polyline: leaflet.Polyline;
-  public location: leaflet.LatLng;
-  public locationTrail: leaflet.LatLng[] = [];
-  public cacheDrops: leaflet.Rectangle[] = [];
+  private map: leaflet.Map;
+  private playerMarker: leaflet.Marker;
+  private polyline: leaflet.Polyline;
+  private location: leaflet.LatLng;
+  private locationTrail: leaflet.LatLng[] = [];
+  private cacheDrops: leaflet.Rectangle[] = [];
 
-  constructor(containerId: string, initLoc: leaflet.LatLng, zoomLevel: number) {
+  constructor(containerId: string, zoomLevel: number) {
+    const initLoc = leaflet.latLng(36.98949379578401, -122.06277128548504);
     this.map = leaflet.map(document.getElementById(containerId)!, {
       center: initLoc,
       zoom: zoomLevel,
@@ -32,22 +33,6 @@ export class MapManager {
     this.location = initLoc;
   }
 
-  getLoc() {
-    return this.location;
-  }
-
-  getLat() {
-    return this.location.lat;
-  }
-
-  getLng() {
-    return this.location.lng;
-  }
-
-  getTrail() {
-    return this.locationTrail;
-  }
-
   panView(i: number, j: number) {
     this.map.panTo(leaflet.latLng(i, j));
   }
@@ -56,6 +41,15 @@ export class MapManager {
     this.location = leaflet.latLng(i, j);
     this.playerMarker.setLatLng(this.location);
     this.panView(i, j);
+  }
+
+  initTrail() {
+    this.locationTrail.push(this.location);
+  }
+
+  setTrail(pointList: leaflet.LatLng[]) {
+    this.locationTrail.splice(0, 0, ...pointList);
+    this.polyline.setLatLngs(this.locationTrail);
   }
 
   redrawTrail() {
@@ -77,5 +71,21 @@ export class MapManager {
   clearCaches() {
     this.cacheDrops.forEach((cache) => cache.remove());
     this.cacheDrops = [];
+  }
+
+  getLoc() {
+    return this.location;
+  }
+
+  getLat() {
+    return this.location.lat;
+  }
+
+  getLng() {
+    return this.location.lng;
+  }
+
+  getTrail() {
+    return this.locationTrail;
   }
 }
