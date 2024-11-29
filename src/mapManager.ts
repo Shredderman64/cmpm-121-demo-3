@@ -3,7 +3,8 @@ import leaflet from "leaflet";
 export class MapManager {
   public map: leaflet.Map;
   public playerMarker: leaflet.Marker;
-  private trail: leaflet.Polyline;
+  public trail: leaflet.Polyline;
+  public location: leaflet.LatLng;
 
   constructor(containerId: string, initLoc: leaflet.LatLng, zoomLevel: number) {
     this.map = leaflet.map(document.getElementById(containerId)!, {
@@ -18,9 +19,12 @@ export class MapManager {
         '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(this.map);
 
-    this.playerMarker = leaflet
-      .marker(initLoc)
+    this.playerMarker = leaflet.marker(initLoc)
       .bindTooltip("Hi")
+      .addTo(this.map);
+
+    this.trail = leaflet.polyline([])
+      .addLatLng(initLoc)
       .addTo(this.map);
   }
 }

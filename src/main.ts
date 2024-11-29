@@ -61,9 +61,6 @@ const mapManager = new MapManager("map", OAKES_CLASSROOM, ZOOM_LEVEL);
 
 let playerLocation = OAKES_CLASSROOM;
 const locationTrail: leaflet.LatLng[] = [];
-const polyline = leaflet.polyline(locationTrail).addTo(mapManager.map);
-
-polyline.addLatLng(playerLocation);
 
 let autoLocation = false;
 let watchId: number;
@@ -276,12 +273,12 @@ function centerPlayer(i: number, j: number) {
 
 function redrawTrail() {
   locationTrail.push(playerLocation);
-  polyline.setLatLngs(locationTrail);
+  mapManager.trail.setLatLngs(locationTrail);
 }
 
 function resetTrail() {
   locationTrail.splice(0, locationTrail.length, playerLocation);
-  polyline.setLatLngs(locationTrail);
+  mapManager.trail.setLatLngs(locationTrail);
 }
 
 bus.addEventListener("player-moved", setStorage);
@@ -327,5 +324,5 @@ function loadFromStorage() {
 
   const pointList = JSON.parse(localStorage.getItem("trail")!);
   locationTrail.splice(0, 0, ...pointList);
-  polyline.setLatLngs(locationTrail);
+  mapManager.trail.setLatLngs(locationTrail);
 }
