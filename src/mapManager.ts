@@ -6,6 +6,7 @@ export class MapManager {
   public polyline: leaflet.Polyline;
   public location: leaflet.LatLng;
   public locationTrail: leaflet.LatLng[] = [];
+  public cacheDrops: leaflet.Rectangle[] = [];
 
   constructor(containerId: string, initLoc: leaflet.LatLng, zoomLevel: number) {
     this.map = leaflet.map(document.getElementById(containerId)!, {
@@ -31,6 +32,10 @@ export class MapManager {
     this.location = initLoc;
   }
 
+  getLoc() {
+    return this.location;
+  }
+
   getLat() {
     return this.location.lat;
   }
@@ -43,19 +48,34 @@ export class MapManager {
     return this.locationTrail;
   }
 
+  panView(i: number, j: number) {
+    this.map.panTo(leaflet.latLng(i, j));
+  }
+
   centerPlayer(i: number, j: number) {
     this.location = leaflet.latLng(i, j);
     this.playerMarker.setLatLng(this.location);
-    this.map.panTo(this.location);
+    this.panView(i, j);
   }
 
   redrawTrail() {
-    this.getTrail().push(this.location);
-    this.polyline.setLatLngs(this.getTrail());
+    this.locationTrail.push(this.location);
+    this.polyline.setLatLngs(this.locationTrail);
   }
 
   resetTrail() {
-    this.getTrail().splice(0, this.getTrail().length, this.location);
-    this.polyline.setLatLngs(this.getTrail());
+    this.locationTrail.splice(0, this.locationTrail.length, this.location);
+    this.polyline.setLatLngs(this.locationTrail);
+  }
+
+  drawCache(bounds: leaflet.LatLngBounds, popup: () => HTMLDivElement) {
+    const drop = leaflet.rectangle(bounds);
+    drop.bindPopup(popup).addTo(this.map);
+    this.cacheDrops.push(drop);
+  }
+
+  clearCaches() {
+    this.cacheDrops.forEach((cache) => cache.remove());
+    this.cacheDrops = [];
   }
 }

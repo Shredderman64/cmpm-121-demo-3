@@ -123,7 +123,6 @@ resetButton.addEventListener("click", () => {
 });
 
 const mementos = new Map<string, string>();
-const cacheDrops: leaflet.Rectangle[] = [];
 
 function createCache(i: number, j: number): Cache {
   const tokenCount = Math.floor(luck([i, j, "initial"].toString()) * 100);
@@ -151,35 +150,28 @@ function createCache(i: number, j: number): Cache {
 }
 
 function spawnDrops() {
-  const cells = neighborhood.getCellsNearPoint(mapManager.location);
+  const cells = neighborhood.getCellsNearPoint(mapManager.getLoc());
   for (const cell of cells) {
     if (luck([cell.i, cell.j].toString()) < DROP_CHANCE) {
-      spawnDrop(cell.i, cell.j, neighborhood.getCellBounds(cell));
+      spawnDrop(cell.i, cell.j);
     }
   }
 }
 
 function respawnDrops() {
-  for (let i = 0; i < cacheDrops.length; i++) {
-    const drop = cacheDrops[i];
-    drop.remove();
-  }
-  cacheDrops.splice(0, cacheDrops.length);
+  mapManager.clearCaches();
   spawnDrops();
 }
 
-function spawnDrop(i: number, j: number, bounds: leaflet.LatLngBounds) {
-  const drop = leaflet.rectangle(bounds);
-  drop.addTo(mapManager.map);
-
+function spawnDrop(i: number, j: number) {
+  const bounds = neighborhood.getCellBounds({ i, j });
   const cache = createCache(i, j);
   const cacheKey = [i, j].toString();
   if (mementos.has(cacheKey)) {
     cache.memento.fromMemento(mementos.get(cacheKey)!);
   }
 
-  drop.bindPopup(createCachePopup(cache));
-  cacheDrops.push(drop);
+  mapManager.drawCache(bounds, createCachePopup(cache));
 }
 
 function createCachePopup(cache: Cache) {
@@ -247,9 +239,7 @@ function createTokenIdentifier(token: Token) {
   const tokenId = document.createElement("div");
   tokenId.innerHTML += `<div>${token.i}:${token.j}#${token.serial}</div>`;
   tokenId.addEventListener("click", () => {
-    mapManager.map.panTo(
-      leaflet.latLng(token.i * TILE_DEGREES, token.j * TILE_DEGREES),
-    );
+    mapManager.panView(token.i * TILE_DEGREES, token.j * TILE_DEGREES);
   });
   return tokenId;
 }
@@ -270,7 +260,7 @@ bus.addEventListener("inventory-changed", displayInventory);
 
 if (!localStorage.getItem("cache")) {
   setStorage();
-  mapManager.getTrail().push(mapManager.location);
+  mapManager.getTrail().push(mapManager.getLoc());
   spawnDrops();
 } else {
   loadFromStorage();
