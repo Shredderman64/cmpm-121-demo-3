@@ -63,11 +63,7 @@ let playerLocation = OAKES_CLASSROOM;
 const locationTrail: leaflet.LatLng[] = [];
 const polyline = leaflet.polyline(locationTrail).addTo(mapManager.map);
 
-const playerMarker = leaflet.marker(playerLocation);
 polyline.addLatLng(playerLocation);
-
-playerMarker.bindTooltip("Hi");
-playerMarker.addTo(mapManager.map);
 
 let autoLocation = false;
 let watchId: number;
@@ -272,7 +268,7 @@ function movePlayer(i: number, j: number) {
 
 function centerPlayer(i: number, j: number) {
   playerLocation = leaflet.latLng(i, j);
-  playerMarker.setLatLng(playerLocation);
+  mapManager.playerMarker.setLatLng(playerLocation);
   mapManager.map.panTo(playerLocation);
 
   respawnDrops();

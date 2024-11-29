@@ -2,7 +2,7 @@ import leaflet from "leaflet";
 
 export class MapManager {
   public map: leaflet.Map;
-  private playerMarker: leaflet.Marker;
+  public playerMarker: leaflet.Marker;
   private trail: leaflet.Polyline;
 
   constructor(containerId: string, initLoc: leaflet.LatLng, zoomLevel: number) {
@@ -17,5 +17,10 @@ export class MapManager {
       attribution:
         '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(this.map);
+
+    this.playerMarker = leaflet
+      .marker(initLoc)
+      .bindTooltip("Hi")
+      .addTo(this.map);
   }
 }
