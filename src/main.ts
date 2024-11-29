@@ -1,5 +1,6 @@
 // todo
 import { Board } from "./board.ts";
+import { MapManager } from "./mapManager.ts";
 import leaflet from "leaflet";
 import luck from "./luck.ts";
 
@@ -56,27 +57,17 @@ function notify(event: EventName) {
 
 const neighborhood = new Board(TILE_DEGREES, NEIGHBORHOOD_SIZE);
 
-const map = leaflet.map(document.getElementById("map")!, {
-  center: OAKES_CLASSROOM,
-  zoom: ZOOM_LEVEL,
-  scrollWheelZoom: false,
-});
-
-leaflet.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: ZOOM_LEVEL,
-  attribution:
-    '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-}).addTo(map);
+const mapManager = new MapManager("map", OAKES_CLASSROOM, ZOOM_LEVEL);
 
 let playerLocation = OAKES_CLASSROOM;
 const locationTrail: leaflet.LatLng[] = [];
-const polyline = leaflet.polyline(locationTrail).addTo(map);
+const polyline = leaflet.polyline(locationTrail).addTo(mapManager.map);
 
 const playerMarker = leaflet.marker(playerLocation);
 polyline.addLatLng(playerLocation);
 
 playerMarker.bindTooltip("Hi");
-playerMarker.addTo(map);
+playerMarker.addTo(mapManager.map);
 
 let autoLocation = false;
 let watchId: number;
@@ -189,7 +180,7 @@ function respawnDrops() {
 
 function spawnDrop(i: number, j: number, bounds: leaflet.LatLngBounds) {
   const drop = leaflet.rectangle(bounds);
-  drop.addTo(map);
+  drop.addTo(mapManager.map);
 
   const cache = createCache(i, j);
   const cacheKey = [i, j].toString();
@@ -266,7 +257,9 @@ function createTokenIdentifier(token: Token) {
   const tokenId = document.createElement("div");
   tokenId.innerHTML += `<div>${token.i}:${token.j}#${token.serial}</div>`;
   tokenId.addEventListener("click", () => {
-    map.panTo(leaflet.latLng(token.i * TILE_DEGREES, token.j * TILE_DEGREES));
+    mapManager.map.panTo(
+      leaflet.latLng(token.i * TILE_DEGREES, token.j * TILE_DEGREES),
+    );
   });
   return tokenId;
 }
@@ -280,7 +273,7 @@ function movePlayer(i: number, j: number) {
 function centerPlayer(i: number, j: number) {
   playerLocation = leaflet.latLng(i, j);
   playerMarker.setLatLng(playerLocation);
-  map.panTo(playerLocation);
+  mapManager.map.panTo(playerLocation);
 
   respawnDrops();
 }
